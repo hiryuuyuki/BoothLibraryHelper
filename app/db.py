@@ -1,8 +1,13 @@
+# app/db.py
+# 修正: models.Item -> models.BoothItem を利用し、DBの行を BoothItem にマッピングして返す。
+#       sqlite の接続引数は Path でも動くが安全のため str() を使う。
+
 import sqlite3
 import time
 import hashlib
 from pathlib import Path
-from app.models import Item
+from datetime import datetime
+from app.models import BoothItem  # 修正: Item -> BoothItem
 
 def compute_hash(title: str, url: str, thumb_url: str) -> str:
     h = hashlib.sha256()
@@ -11,7 +16,8 @@ def compute_hash(title: str, url: str, thumb_url: str) -> str:
 
 class DB:
     def __init__(self, db_path: Path):
-        self.conn = sqlite3.connect(db_path)
+        # sqlite3.connect は PathLike を受け取れるが、安定のため str に変換
+        self.conn = sqlite3.connect(str(db_path))
         self._init_schema()
 
     def _init_schema(self):
@@ -66,7 +72,35 @@ class DB:
         cur = self.conn.execute(
             "SELECT * FROM items ORDER BY last_seen_ts DESC"
         )
-        return [Item(*r) for r in cur.fetchall()]
+        rows = cur.fetchall()
+        out = []
+        for r in rows:
+            # DB schema order:
+            # item_id, title, url, thumb_url, local_folder, last_seen_ts, content_hash, has_update
+            try:
+                item_id, title, url, thumb_url, local_folder, last_seen_ts, content_hash, has_update = r
+            except Exception:
+                continue
+
+            # BoothItem fields: item_id, name, url, thumbnail_url, folder, updated_at
+            try:
+                if isinstance(last_seen_ts, (int, float)):
+                    updated_at = datetime.utcfromtimestamp(int(last_seen_ts)).isoformat() + "Z"
+                else:
+                    updated_at = None
+            except Exception:
+                updated_at = None
+
+            bi = BoothItem(
+                item_id=str(item_id),
+                name=str(title),
+                url=str(url),
+                thumbnail_url=str(thumb_url) if thumb_url is not None else None,
+                folder=str(local_folder),
+                updated_at=updated_at
+            )
+            out.append(bi)
+        return out
 
     def clear_update_flag(self, item_id: str):
         self.conn.execute(

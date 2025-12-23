@@ -1,4 +1,7 @@
 # app/storage.py
+# 変更: 戻り値を summary dict -> items list に変更。
+#       また UI が期待するトップレベルのカウントキー (zip_count, doc_count, source_count, image_count) を各 item に追加。
+
 import os
 from typing import Dict, Any, List
 from app.settings import get_last_dl_folder
@@ -17,7 +20,7 @@ from app.utils import (
 logger = get_logger(__name__)
 
 
-def scan_dl_folder(root_folder: str, max_depth: int = 2, diff: bool = True, public_ttl_sec: int = 3600, public_force_refresh: bool = False) -> Dict[str, Any]:
+def scan_dl_folder(root_folder: str, max_depth: int = 2, diff: bool = True, public_ttl_sec: int = 3600, public_force_refresh: bool = False) -> List[Dict[str, Any]]:
     """
     Root folder contains item folders like: [123456] Product Name
 
@@ -26,6 +29,9 @@ def scan_dl_folder(root_folder: str, max_depth: int = 2, diff: bool = True, publ
       - Only accesses public booth.pm item pages (optional) for og:image / og:title
       - Public thumbnail/title are refreshed with TTL (default: 1 hour) to reflect latest updates
         (set public_force_refresh=True to force refresh).
+
+    Returns:
+      List of item dicts (same shape as metadata.json "items" entry).
     """
     prev = read_metadata_json(root_folder) if diff else None
     prev_map: Dict[str, Dict[str, Any]] = {}
@@ -57,6 +63,7 @@ def scan_dl_folder(root_folder: str, max_depth: int = 2, diff: bool = True, publ
                 "archives": [],
                 "documents": [],
                 "sources": [],
+                "images": [],
             },
             "stats": {
                 "archive_count": 0,
@@ -77,6 +84,15 @@ def scan_dl_folder(root_folder: str, max_depth: int = 2, diff: bool = True, publ
         scanned = scan_files_two_level(item_path)
         item["files"] = scanned.get("files", item["files"])
         item["stats"] = scanned.get("stats", item["stats"])
+
+        # 互換性のため、UI が期待するトップレベルキーを追加
+        try:
+            item["zip_count"] = int(item["stats"].get("archive_count", 0) or 0)
+            item["doc_count"] = int(item["stats"].get("document_count", 0) or 0)
+            item["source_count"] = int(item["stats"].get("source_count", 0) or 0)
+            item["image_count"] = int(item["stats"].get("image_count", 0) or 0)
+        except Exception:
+            item["zip_count"] = item["doc_count"] = item["source_count"] = item["image_count"] = 0
 
         pid = extract_product_id(name)
         if pid:
@@ -125,27 +141,5 @@ def scan_dl_folder(root_folder: str, max_depth: int = 2, diff: bool = True, publ
 
     write_metadata_json(root_folder, items)
 
-    return {
-        "count": len(items),
-        "archives": total_archives,
-        "documents": total_documents,
-    }
-
-
-def scan_last_dl_folder(
-    max_depth: int = 2,
-    diff: bool = True,
-    public_ttl_sec: int = 3600,
-    public_force_refresh: bool = False,
-) -> Dict[str, Any]:
-    """Scan using last remembered DL folder. Returns same dict as scan_dl_folder."""
-    root = get_last_dl_folder()
-    if not root:
-        raise FileNotFoundError("last_dl_folder is not set or does not exist")
-    return scan_dl_folder(
-        root,
-        max_depth=max_depth,
-        diff=diff,
-        public_ttl_sec=public_ttl_sec,
-        public_force_refresh=public_force_refresh,
-    )
+    # 互換性のため: 以前は summary dict を返していたが、UI 側は items list を期待しているため list を返す
+    return items
