@@ -14,10 +14,10 @@ APP_NAME = "BoothLibraryHelper"
 # MAJOR.MINOR.PATCH
 APP_VERSION = "0.9.0"
 
-# --------------------------------------------
-# 表示用文字列
-# --------------------------------------------
+# 互換性のための別名（他ファイルが期待する名前を提供）
+VERSION = APP_VERSION
 APP_TITLE = f"{APP_NAME} v{APP_VERSION}"
+DISPLAY_VERSION = APP_TITLE
 
 # --------------------------------------------
 # 将来アップデート用メタ情報
