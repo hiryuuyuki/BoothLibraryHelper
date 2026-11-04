@@ -6,8 +6,10 @@
 # ============================================
 import json
 import os
+import re
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -93,6 +95,26 @@ class TestUiState(SettingsTestCase):
         settings.save_settings({"last_dl_folder": "x"})
         settings.set_ui_state({"a": 1})
         self.assertEqual(settings.load_settings()["last_dl_folder"], "x")
+
+
+class TestUpdatedAtFormat(SettingsTestCase):
+    """*_updated_at は "YYYY-MM-DDTHH:MM:SSZ"（マイクロ秒なし、+00:00 なし）の UTC"""
+
+    def _assert_utc_z_now(self, value):
+        self.assertRegex(value, re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$"))
+        self.assertNotIn("+00:00", value)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        self.assertLess(abs((now - datetime.fromisoformat(value[:-1])).total_seconds()), 60)
+
+    def test_last_dl_folder_updated_at(self):
+        target = self.tmp / "dl"
+        target.mkdir()
+        settings.set_last_dl_folder(str(target))
+        self._assert_utc_z_now(settings.load_settings()["last_dl_folder_updated_at"])
+
+    def test_ui_state_updated_at(self):
+        settings.set_ui_state({"a": 1})
+        self._assert_utc_z_now(settings.load_settings()["ui_state_updated_at"])
 
 
 if __name__ == "__main__":

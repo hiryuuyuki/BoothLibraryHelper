@@ -86,6 +86,12 @@ class TestListItems(DBTestCase):
             self.db.upsert_item("1", "A", "u", None, "/f")
         self.assertEqual(self.db.list_items()[0].updated_at, "1970-01-01T00:00:00Z")
 
+    def test_updated_at_value_non_epoch(self):
+        # "YYYY-MM-DDTHH:MM:SSZ"（+00:00 を含まない）の UTC
+        with mock.patch("app.db.time.time", return_value=1700000000):
+            self.db.upsert_item("1", "A", "u", None, "/f")
+        self.assertEqual(self.db.list_items()[0].updated_at, "2023-11-14T22:13:20Z")
+
     def test_empty_db(self):
         self.assertEqual(self.db.list_items(), [])
 

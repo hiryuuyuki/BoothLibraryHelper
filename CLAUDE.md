@@ -1,7 +1,10 @@
 # BoothLibraryHelper — AI作業規約
 
 ## 技術構成（事実のみ）
-- Python / PySide6 + qasync / Playwright + BeautifulSoup4 / requests / PyInstaller
+- Python / requests / PyInstaller
+- メイン画面は **tkinter**（app/ui_main.py）。PySide6 は about_dialog.py・agreement_dialog.py と、既定で非表示の Viewer だけで使う
+- requirements.txt にある Playwright・qasync・BeautifulSoup4 は、app/ のコードからは import されていない（2026-11 時点）
+- app/db.py（DB クラス）は、どこからも使われていない（2026-11 時点）
 - エントリポイント: app/main.py, app/__main__.py
 - 依存関係は app/requirements.txt（本体）と requirements-dev.txt（開発用）に書かれたものだけ。
   ここに無いパッケージを import しない・提案なしに追加しない。

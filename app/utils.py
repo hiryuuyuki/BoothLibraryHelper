@@ -2,7 +2,7 @@
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple, Set
 
 import requests
@@ -146,7 +146,9 @@ def fetch_and_cache_thumbnail(
         dt = _parse_utc_iso(meta.get("fetched_at"))
         if not dt:
             return False
-        age = (datetime.utcnow() - dt).total_seconds()
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        age = (datetime.now(timezone.utc) - dt).total_seconds()
         return age < float(ttl_sec)
 
     # Fast path: cached & fresh
@@ -172,7 +174,7 @@ def fetch_and_cache_thumbnail(
                 "official_title": meta.get("official_title", ""),
                 "og_image_url": "",
                 "image_rel": existing_rel or "",
-                "fetched_at": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+                "fetched_at": datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None).isoformat() + "Z",
             }
             with open(meta_path, "w", encoding="utf-8") as f:
                 json.dump(meta_out, f, ensure_ascii=False, indent=2)
@@ -194,7 +196,7 @@ def fetch_and_cache_thumbnail(
                 "official_title": meta.get("official_title", ""),
                 "og_image_url": og_image_url,
                 "image_rel": existing_rel,
-                "fetched_at": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+                "fetched_at": datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None).isoformat() + "Z",
             }
             with open(meta_path, "w", encoding="utf-8") as f:
                 json.dump(meta_out, f, ensure_ascii=False, indent=2)
@@ -247,7 +249,7 @@ def fetch_and_cache_thumbnail(
             "official_title": meta.get("official_title", ""),
             "og_image_url": og_image_url,
             "image_rel": image_rel,
-            "fetched_at": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+            "fetched_at": datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None).isoformat() + "Z",
         }
         with open(meta_path, "w", encoding="utf-8") as f:
             json.dump(meta_out, f, ensure_ascii=False, indent=2)
@@ -446,7 +448,7 @@ def _write_purchase_json(
         "source": {
             "type": source_type,
             "hint": source_hint,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
         },
         "items": items,
     }

@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 SETTINGS_PATH = Path(__file__).resolve().parent.parent / "settings.json"
 
@@ -52,7 +52,7 @@ def set_last_dl_folder(path: str):
 
     settings = load_settings()
     settings["last_dl_folder"] = p
-    settings["last_dl_folder_updated_at"] = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    settings["last_dl_folder_updated_at"] = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None).isoformat() + "Z"
     save_settings(settings)
 
 
@@ -67,5 +67,5 @@ def set_ui_state(state: dict):
         return
     settings = load_settings()
     settings["ui_state"] = state
-    settings["ui_state_updated_at"] = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    settings["ui_state_updated_at"] = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None).isoformat() + "Z"
     save_settings(settings)
