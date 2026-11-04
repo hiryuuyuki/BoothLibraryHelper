@@ -21,6 +21,7 @@
 ## 検証コマンド
 - python -m compileall -q app
 - python -m pytest -q
+  （pytest 未導入の環境では `python -m unittest discover -s tests`。テストは unittest 形式で書く）
 - python -m ruff check app tests
 
 ## コミットメッセージの規約（人がコミットするときの参考）
