@@ -205,3 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Claude Code チームの引き継ぎ票（ローカル作業用）
+.claude/work/

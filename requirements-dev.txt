@@ -1,0 +1,4 @@
+# 開発・テスト専用（配布exeには含めない）
+-r app/requirements.txt
+pytest==8.3.4
+ruff==0.8.4

@@ -6,7 +6,7 @@ import sqlite3
 import time
 import hashlib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models import BoothItem  # 修正: Item -> BoothItem
 
 def compute_hash(title: str, url: str, thumb_url: str) -> str:
@@ -85,7 +85,7 @@ class DB:
             # BoothItem fields: item_id, name, url, thumbnail_url, folder, updated_at
             try:
                 if isinstance(last_seen_ts, (int, float)):
-                    updated_at = datetime.utcfromtimestamp(int(last_seen_ts)).isoformat() + "Z"
+                    updated_at = datetime.fromtimestamp(int(last_seen_ts), timezone.utc).replace(tzinfo=None).isoformat() + "Z"
                 else:
                     updated_at = None
             except Exception:
