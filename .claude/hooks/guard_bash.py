@@ -7,11 +7,16 @@ import json
 import re
 import sys
 
+# git のグローバルオプション（-C <path>、-c k=v、--git-dir=...、--no-pager など）をサブコマンドの前に許容する。
+# これが無いと `git -C <worktree> commit` のような形で判定をすり抜けてしまう。
+_GIT_ARG = r"""(?:"[^"]*"|'[^']*'|\S+)"""
+_GIT = r"\bgit(?:\s+(?:-[Cc]\s+" + _GIT_ARG + r"|--[\w-]+(?:=" + _GIT_ARG + r")?|-[A-Za-z]))*\s+"
+
 BLOCK = [
     (r"\brm\s+-[a-zA-Z]*r[a-zA-Z]*f|\brm\s+-[a-zA-Z]*f[a-zA-Z]*r", "rm -rf は禁止です"),
     (r"\bRemove-Item\b.*-Recurse", "再帰的な削除は禁止です"),
-    (r"\bgit\s+(commit|push|merge|rebase|cherry-pick)\b", "git の履歴操作は人が行います"),
-    (r"\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-[a-z]*f", "変更を捨てる操作は禁止です"),
+    (_GIT + r"(commit|push|merge|rebase|cherry-pick)\b", "git の履歴操作は人が行います"),
+    (_GIT + r"reset\s+--hard\b|" + _GIT + r"clean\s+-[a-z]*f", "変更を捨てる操作は禁止です"),
     (r"--force\b|\s-f\s+origin", "force 系の操作は禁止です"),
     (r"\bpip3?\s+(install|uninstall)\b|\buv\s+(add|pip)\b", "依存関係の変更は提案だけにしてください"),
     (r"\b(printenv|env)\s*($|\|)|\bset\s*$|Get-ChildItem\s+env:", "環境変数を表示しないでください"),
